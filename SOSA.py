@@ -1,15 +1,26 @@
 print("SOSA means 'Synthetic & Observed Spectra  Analyzer'")
-print("                                        ******READ THIS******\n1.The purpose of SOSA is to find Synthetic Spectra (SS) pairs that match accurately with an observed \nbinary"+str("'s")+" spectra.\n\n2.For SOSA to be successful you must run it using python 3!\n\n\n                               *****Making Sure This Runs Smoothly***** \n0. Honeslty, I highly suggest that you only have the SS you want to use in the file location. \n\n1. The way this SOSA chooses which SS is for the Left star in the binary and which is for the right star is by looking at the files"+str("'")+" name.\n       1.1 It looks if the file name has (l or L) as the first character signifing that it is the left star. Vis Versa for the right analog. It also looks if the last 4 characters in the name is .txt \n       1.2 the second through fith characters need to be the Temperture of that SS. This means if your SS temp goes above 9999 or below 1000 you will get a strange result.   \n           An example of a good Left SS name is L6500.txt\n           An example of a good Right SS name is R5700.txt\n2. Make sure there is no header in the SS or the observed.\n3. Assumes the SS's wavelengths have fewer decimal points than the observed wavelengths.")
+print('''                                       ******READ THIS******
+      The purpose of this program is to find Synthetic Spectra (SS) pairs that match accurately with an observed 
+binary"+str("'s")+" spectra.\n\n2.For this program to be successful you must run it using python 3!
 
-#/home/jgussman/Research/Binaries/Gloria/Data/SS/Plain
-#/home/jgussman/Research/Binaries/Gloria/Data/Stars/86201a16.txt
 
-#Note to self: Fix Binary Rounding. Do not have it set to 3. 
+                              *****Making Sure This Runs Smoothly***** 
+     n0. H I highly suggest that you only have the SS you want to use in the file location. 
+     1. The way this program chooses which SS is for the Left star in the binary and which is for the right star is by
+     looking at the files"+str("'")+" name.\n       
+     1.1 It looks if the file name has (l or L) as the first character signifing that it is the left star. Vis Versa 
+     for the right analog. It also looks if the last 4 characters in the name is .txt        
+     1.2 the second through fith characters need to be the Temperture of that SS. This means if your SS temp goes 
+     above 9999 or below 1000 you will get a strange result.   
+          An example of a good Left SS name is L6500.txt           
+          An example of a good Right SS name is R5700.txt
+     2. Make sure there is no header in the SS or the observed.''')
+ 
+    
 #Loading in Packages that are necessary for SOSA to run
-
 import numpy as np
 from os import listdir
-#%matplotlib notebook
+#%matplotlib notebook #THis is automatically enabled on Mac's 
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
@@ -18,13 +29,18 @@ from xlwt import Workbook
 from os import path
 import pandas as pd
 locationsComplete=""
-print("-----------------------------------------------------------\nDo you already have the excel file of possible combinations you want to work with? (Yes/No)\n")
+print('''
+-----------------------------------------------------------
+Do you already have the excel file of possible combinations you want to work with? (Yes/No)''')
 while not locationsComplete:
     haveCombinations=input("Your answer: ")
     excelLocationFound='' #This needs to be outside here so later in the SOSA it can see if there is a excel file or not.
     if haveCombinations.lower()=='yes':
         #Getting the excel file Location
-        print("\n-----------------------------------------------------------\nEnter the path to the excel file. \nex:/home/jgussman/Research/Combinations/HIP86201SS.xls")
+        print('''
+        -----------------------------------------------------------
+              Enter the path to the excel file. 
+              EXAMPLE:/home/jgussman/Research/Combinations/HIP86201SS.xls''')
         while not excelLocationFound:
             excelLocation=input("\nYours: ")
             if  not path.exists(excelLocation):
@@ -34,7 +50,10 @@ while not locationsComplete:
                 
                 
         #Getting the Synethic Spectra Location
-        print("\n-----------------------------------------------------------\nEnter the path to the folder that contains all your SS \nex: /home/jgussman/Research/Binaries/Data/SS/")
+        print('''
+        -----------------------------------------------------------
+        Enter the path to the folder that contains all your SS 
+        EXAMPLE: /home/jgussman/Research/Binaries/Data/SS/''')
         ssLocationFound=''
         while not ssLocationFound:
             ssLocation=input("\nYours:  ")
@@ -51,7 +70,10 @@ while not locationsComplete:
                 
                 
         #Getting the Binary Spectra Location
-        print("\n-----------------------------------------------------------\nEnter the path to your binary Spectra! \nex: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt")
+        print('''
+        -----------------------------------------------------------
+              Enter the path to your Observed Binary Spectra! 
+              EXAMPLE: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt''')
         binaryLocationFound=''
         while not binaryLocationFound:
             binaryLocation=input("\nYours:  ")
@@ -62,7 +84,9 @@ while not locationsComplete:
                 
                 
             
-        locationsComplete="\n-----------------------------------------------------------\nAll Locations have been found!"
+        locationsComplete='''
+        -----------------------------------------------------------
+        All Locations have been found!'''
         print(locationsComplete)
         print(excelLocationFound)
         print(ssLocationFound)
@@ -87,7 +111,10 @@ while not locationsComplete:
               
                 
         #Getting the Binary Spectra Location
-        print("\n-----------------------------------------------------------\nEnter the path to your binary Spectra! \nex: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt")
+        print('''
+        -----------------------------------------------------------
+        Enter the path to your binary Spectra! 
+        EXAMPLE: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt''')
         binaryLocationFound=''
         while not binaryLocationFound:
             binaryLocation=input("\nYours:  ")
@@ -168,7 +195,8 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
                 possibleCombinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
 
 if delta_weight==0:
-    delta_weight=float(input('What would you like the weights for your synthetic spectra be changed in incridments of? '))
+    delta_weight=float(input('''Enter the incredment for the weights: 
+    Common weight is: 0.001'''))
 print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
 print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
 if excelLocationFound:
