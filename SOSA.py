@@ -210,7 +210,7 @@ pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleC
 ####WRITING TO EXCEL
 #DONT DONE WORKING ON 
 if not excelLocationFound:
-    print("Would you like to make to put your Combinations in an excel file?")
+    print("Would you like to put your Combinations in an excel file?")
     makeAnExcelFile=''
     excelFilemade=''
     while not makeAnExcelFile:
