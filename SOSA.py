@@ -2,8 +2,6 @@ print("SOSA means 'Synthetic & Observed Spectra  Analyzer'")
 print('''                                       ******READ THIS******
       The purpose of this program is to find Synthetic Spectra (SS) pairs that match accurately with an observed 
 binary"+str("'s")+" spectra.\n\n2.For this program to be successful you must run it using python 3!
-
-
                               *****Making Sure This Runs Smoothly***** 
      n0. H I highly suggest that you only have the SS you want to use in the file location. 
      1. The way this program chooses which SS is for the Left star in the binary and which is for the right star is by
@@ -195,8 +193,8 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
                 possibleCombinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
 
 if delta_weight==0:
-    delta_weight=float(input('''Enter the incredment for the weights: 
-    Common weight is: 0.001'''))
+    delta_weight=float(input('''Common weight is: 0.001
+                             Enter the incredment for the weights: '''))
 print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
 print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
 if excelLocationFound:
