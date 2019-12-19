@@ -148,7 +148,7 @@ for data in listdir(ssLocation):
     if lengthofTxtFile ==0:
         lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
         
-    LeftSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]-wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
+    LeftSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
     LeftSS[int(data[:4])]=[LeftSS[int(data[:4])][0][indexforShift:],LeftSS[int(data[:4])][1][indexforShift:]]
     Leftstar = int(data[:4])
     RightSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
