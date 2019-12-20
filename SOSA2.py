@@ -1,9 +1,9 @@
 print("SOSA means 'Synthetic & Observed Spectra  Analyzer'")
-print('''                                       ******READ THIS******
+print('''                                 ******READ THIS******
       The purpose of this program is to find Synthetic Spectra (SS) pairs that match accurately with an observed 
-binary"+str("'s")+" spectra.\n\n2.For this program to be successful you must run it using python 3!
+          binary"+str("'s")+" spectra.\n\n2.For this program to be successful you must run it using python 3!
                               *****Making Sure This Runs Smoothly***** 
-     n0. H I highly suggest that you only have the SS you want to use in the file location. 
+     n0. I highly suggest that you only have the SS you want to use in the file location. 
      1. The way this program chooses which SS is for the Left star in the binary and which is for the right star is by
      looking at the files"+str("'")+" name.\n       
      1.1 It looks if the file name has (l or L) as the first character signifing that it is the left star. Vis Versa 
@@ -26,6 +26,7 @@ import xlwt
 from xlwt import Workbook
 from os import path
 import pandas as pd
+
 
 def FileLocations():
     '''
@@ -96,8 +97,10 @@ Enter the path to the excel file.
 ssLocation, binaryLocation, excelLocation = FileLocations()
 
 #Loading Data.
-print("\n-----------------------------------------------------------\nLoading Data...")
-
+print('''
+-----------------------------------------------------------
+Loading Data...''')
+#----------------------------Beginning of Section I am working on------------------------------------
 #Putting the SS into a dictionary so they can be called 
 LeftSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
 RightSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
@@ -120,25 +123,21 @@ for data in listdir(ssLocation):
 decimalplaces = str(LeftSS[Leftstar][0][0])[::-1].find('.')
 print('Hope you are having a great day! :D')
 
-#Loading the Binary Spectra
+#-----------------------------------------End of Section I am working on--------------------------
 
+#Loading the Binary Spectra
 wav_binary,flux_binary=np.loadtxt(binaryLocation,unpack=True)
 wav_binary=np.round(wav_binary,decimalplaces)
 
-#Loading Data from Excel (If there was a an excel file) and if not it will begin finding the possible combinations
-#If there is a excel file then assigning its' results to possibleCombinations and asigning it to the 
-delta_weight=0
-if excelLocation!="None":
-    possiblecombinations={}
-    exceldataframe=pd.read_excel(excelLocation)
-    for i in range(len(exceldataframe)):
-        possiblecombinations[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
-    #To see what is the incridments
-    delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
-print("DATA LOADED\n-----------------------------------------------------------\n")
+ 
+#Make Combinations
 
-possibleCombinations={}
 def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
+    '''
+    Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binaries : fluxes of binaries} , incredment for the weight 
+    Output: {(Left SS Temp,Right SS Temp, Left SS Weight, Right SS Weight : Standard deviation from the observed spectra}
+    '''
+    combinations={}
     for l in LeftSS:
         for r in RightSS:
             for weight in np.arange(delta_weight,100,delta_weight):
@@ -149,15 +148,27 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
                 wav_sum=(LeftSS[l][0]+RightSS[r][0])/2
                 indexINTOsum=np.where(np.isin(wav_sum,wav_binary))
                 indexINTObinary=np.where(np.isin(wav_binary,wav_sum))
-                possibleCombinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
+                combinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
+    return combinations 
+#Loading Data from Excel (If there was a an excel file) and if not it will begin finding the possible combinations
+#If there is a excel file then assigning its' results to possibleCombinations and asigning it to the 
+delta_weight=0
+if excelLocation!="None":
+    possibleCombinations={}
+    exceldataframe=pd.read_excel(excelLocation)
+    for i in range(len(exceldataframe)):
+        possibleCombinations[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
+    #To see what is the incridments
+    delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
 
-print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
-print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
+print("DATA LOADED\n-----------------------------------------------------------\n")
 if delta_weight==0:
     delta_weight=float(input('''
-    Enter the incredment for the weights:
+Enter the incredment for the weights:
     '''))
-    MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight)
+    print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
+    print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
+    possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight)
 
 stdvalues=sorted([value for value in possibleCombinations.values()],key=float)
 pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleCombinations[pair]==value]
@@ -187,7 +198,7 @@ if excelLocation=="None":
                         sheet1.write(row, 1, r)
                         sheet1.write(row, 2, weight/100.)
                         sheet1.write(row, 3, (100-weight)/100.)
-                        sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) #******the the rounding to 3 decimals wont work for everything Jude 
+                        sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) 
                         row+=1
 
             whattocalltheexcelfile=input("\n This file will be created where this code is running.What you you like to call this excel file?\n")+'.xls'
