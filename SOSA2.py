@@ -26,110 +26,74 @@ import xlwt
 from xlwt import Workbook
 from os import path
 import pandas as pd
-locationsComplete=""
-print('''
+
+def FileLocations():
+    '''
+    Input: None
+    Output: A tuple of strings (SS Folder Path if have,Binary File Path,Excel File Path if have)
+    '''
+    binarypath = BinaryFileQuestion()
+    haveExcelFilequestion = input('''
 -----------------------------------------------------------
-Do you already have the excel file of possible combinations you want to work with? (Yes/No)''')
-while not locationsComplete:
-    haveCombinations=input("Your answer: ")
-    excelLocationFound='' #This needs to be outside here so later in the SOSA it can see if there is a excel file or not.
-    if haveCombinations.lower()=='yes':
-        #Getting the excel file Location
-        print('''
-        -----------------------------------------------------------
-              Enter the path to the excel file. 
-              EXAMPLE:/home/jgussman/Research/Combinations/HIP86201SS.xls''')
-        while not excelLocationFound:
-            excelLocation=input("\nYours: ")
-            if  not path.exists(excelLocation):
-                print("This location does NOT exist! Try again!")
-            else:
-                excelLocationFound='\nExcel File Path: '+excelLocation
-                
-                
-        #Getting the Synethic Spectra Location
-        print('''
-        -----------------------------------------------------------
-        Enter the path to the folder that contains all your SS 
-        EXAMPLE: /home/jgussman/Research/Binaries/Data/SS/''')
-        ssLocationFound=''
-        while not ssLocationFound:
-            ssLocation=input("\nYours:  ")
-            if ssLocation[len(ssLocation)-1]!='/': #In case the user forgets to put the \ at the end of the path 
-                ssLocation=ssLocation+"/"
-                if not path.exists(ssLocation):
-                    print("This location does NOT exist! Try again!")
-                else:
-                    ssLocationFound="Synethic Spectra Folder Path: "+ssLocation
-            elif not path.exists(ssLocation):
-                    print("This location does NOT exist! Try again!")
-            else:
-                ssLocationFound="Synethic Spectra Folder Path: "+ssLocation
-                
-                
-        #Getting the Binary Spectra Location
-        print('''
-        -----------------------------------------------------------
-              Enter the path to your Observed Binary Spectra! 
-              EXAMPLE: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt''')
-        binaryLocationFound=''
-        while not binaryLocationFound:
-            binaryLocation=input("\nYours:  ")
-            if not path.exists(binaryLocation):
-                print("This location does NOT exist! Try again!")
-            else:
-                binaryLocationFound='Binary Star Spectra File Path: '+binaryLocation
-                
-                
-            
-        locationsComplete='''
-        -----------------------------------------------------------
-        All Locations have been found!'''
-        print(locationsComplete)
-        print(excelLocationFound)
-        print(ssLocationFound)
-        print(binaryLocationFound)
-#If they are trying new combations of a binary and SS
-    elif haveCombinations.lower()=='no':
-         #Getting the Synethic Spectra Location
-        print("\n-----------------------------------------------------------\nEnter the path to the folder that contains all your SS \nex: /home/jgussman/Research/Binaries/Data/SS/")
-        ssLocationFound=''
-        while not ssLocationFound:
-            ssLocation=input("\nYours:  ")
-            if ssLocation[len(ssLocation)-1]!='/': #In case the user forgets to put the \ at the end of the path 
-                ssLocation=ssLocation+"/"
-                if not path.exists(ssLocation):
-                    print("This location does NOT exist! Try again!")
-                else:
-                    ssLocationFound="Synethic Spectra Folder Path: "+ssLocation
-            elif not path.exists(ssLocation):
-                    print("This location does NOT exist! Try again!")
-            else:
-                ssLocationFound="Synethic Spectra Folder Path: "+ssLocation
-              
-                
-        #Getting the Binary Spectra Location
-        print('''
-        -----------------------------------------------------------
-        Enter the path to your Observed Binary Spectra! 
-        EXAMPLE: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt''')
-        binaryLocationFound=''
-        while not binaryLocationFound:
-            binaryLocation=input("\nYours:  ")
-            if not path.exists(binaryLocation):
-                print("This location does NOT exist! Try again!")
-            else:
-                binaryLocationFound='Binary Star Spectra File Path: '+binaryLocation
-                
-                
-            
-        locationsComplete="\n-----------------------------------------------------------\nAll Locations have been found!"
-        print(locationsComplete)
-        print(excelLocationFound)
-        print(ssLocationFound)
-        print(binaryLocationFound)
+Do you have previously generated SS that you would like to use? (Yes/No)''')
+    if haveExcelFilequestion.lower() in ['yes','y']:
+        excelpath = ExcelFileQuestion()
+        return ("None",binarypath,excelpath)
     else:
-        print("***Invalid Respose***\nPlease enter yes or no!")
+        sspath = SSFolderQuestion()
+        return (sspath,binarypath,"None")
+        
+def SSFolderQuestion():
+    print('''
+-----------------------------------------------------------
+Enter the path to the folder that contains all your SS 
+    EXAMPLE: /home/jgussman/Research/Binaries/Data/SS/''')
+    ssLocationFound=''
+    while True:
+        ssLocation=input("\nYours:  ")
+        if ssLocation[len(ssLocation)-1]!='/': #In case the user forgets to put the \ at the end of the path 
+            ssLocation=ssLocation+"/"
+        if not path.exists(ssLocation):
+                print("This location does NOT exist! Try again!")
+        else:
+            print("SS Folder Path Found!")
+            return ssLocation
+
+def BinaryFileQuestion():
+    '''
+    Input: None
+    Output: String of Binary Spectra file path
+    '''
+    print('''
+-----------------------------------------------------------
+Enter the path to your Observed Binary Spectra! 
+    EXAMPLE: /home/jgussman/Research/Binaries/Data/Binaries/HIP86201.txt''')
+    while True:
+        binaryLocation=input("\nYours:  ")
+        if not path.exists(binaryLocation):
+            print("This location does NOT exist! Try again!")
+        else:
+            print("Binary File Path Found!")
+            return binaryLocation
+
+def ExcelFileQuestion(): 
+    '''
+    Input: None
+    Output: String of Excel file path
+    '''
+    print('''
+-----------------------------------------------------------
+Enter the path to the excel file. 
+    EXAMPLE:/home/jgussman/Research/Combinations/HIP86201SS.xls''')
+    while True:
+        excelLocation=input("\nYours: ")
+        if  not path.exists(excelLocation):
+            print("This location does NOT exist! Try again!")
+        else:
+            print("Excel File Path Found!")
+            return excelLocation                                                    
+                
+ssLocation, binaryLocation, excelLocation = FileLocations()
 
 #Loading Data.
 print("\n-----------------------------------------------------------\nLoading Data...")
@@ -164,13 +128,12 @@ wav_binary=np.round(wav_binary,decimalplaces)
 #Loading Data from Excel (If there was a an excel file) and if not it will begin finding the possible combinations
 #If there is a excel file then assigning its' results to possibleCombinations and asigning it to the 
 delta_weight=0
-if excelLocationFound:
+if excelLocation!="None":
     possiblecombinations={}
     exceldataframe=pd.read_excel(excelLocation)
     for i in range(len(exceldataframe)):
         possiblecombinations[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
     #To see what is the incridments
-    #if 
     delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
 print("DATA LOADED\n-----------------------------------------------------------\n")
 
@@ -188,22 +151,19 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
                 indexINTObinary=np.where(np.isin(wav_binary,wav_sum))
                 possibleCombinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
 
-if delta_weight==0:
-    delta_weight=float(input('''Common weight is: 0.001
-    Enter the incredment for the weights: '''))
 print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
 print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
-if excelLocationFound:
+if delta_weight==0:
+    delta_weight=float(input('''
+    Enter the incredment for the weights:
+    '''))
     MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight)
-else:
-    
-    MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight)
+
 stdvalues=sorted([value for value in possibleCombinations.values()],key=float)
 pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleCombinations[pair]==value]
 
 ####WRITING TO EXCEL
-#DONT DONE WORKING ON 
-if not excelLocationFound:
+if excelLocation=="None":
     print("Would you like to put your Combinations in an excel file?")
     makeAnExcelFile=''
     excelFilemade=''
