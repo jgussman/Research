@@ -118,7 +118,7 @@ def LoadInSS(FolderLocation,delta_lambda):
     #     Output: []
     #     '''
     for i in range(0,len(filenames)): #Displaying all the file names nicely so the user can pick which to use
-        pass
+        
 
     listofFilesForLeftStar = list(map(int, input("Enter a multiple value: ").split())) 
         
