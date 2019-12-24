@@ -84,45 +84,50 @@ print('''
 -----------------------------------------------------------
 Loading Data...''')
 #-----------------------------------Only testing code below
-#Putting the SS into a dictionary so they can be called 
-LeftSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
-RightSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
 
-# wavelengthShift = float(input("The wavelength difference for the two stars(In angstroms): "))
-# lengthofTxtFile = 0
-# numberofdecimals = str(wavelengthShift)[::-1].find('.')
-# indexforShift = int(wavelengthShift * eval('1000000'[0:numberofdecimals+1]))
-# decimalplaces=0 #for binary
-# Leftstar = 0 
-# for data in listdir(ssLocation):
-#     if lengthofTxtFile ==0:
-#         lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
-        
-#     LeftSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
-#     LeftSS[int(data[:4])]=[LeftSS[int(data[:4])][0][indexforShift:],LeftSS[int(data[:4])][1][indexforShift:]]
-#     Leftstar = int(data[:4])
-#     RightSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
-#                                 np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
-# decimalplaces = str(LeftSS[Leftstar][0][0])[::-1].find('.')
+
+
 print('Hope you are having a great day! :D')
 
-def LoadInSS(FolderLocation,delta_lambda):
+def LoadInSS(FolderLocation):
     '''
     Input: String SS Folder Path, float wavelength seperation  
-    Output: [Files to use for the left star, Files to use for the right star]
+    Output: Dictionary of SS for left SS, Dictionary of SS for Right SS, an int of how many decimal places the SS have
+    Dictionaries; KEY: Temp of SS, ITEM: ['wavelength','flux']
     '''
     filenames = [name for name in listdir(FolderLocation)] #Extracting the file names 
-    # def WhichFilesToUse(filelist):
-    #     '''
-    #     Input: List of strings that are the names of the files in the given SS location
-    #     Output: []
-    #     '''
-    for i in range(0,len(filenames)): #Displaying all the file names nicely so the user can pick which to use
+    for i in range(len(filenames)): #Displaying all the file names nicely so the user can pick which to use
+        print(str(i)+": "+ filenames[i])
         
+    listofFilesForLeftStar = list(map(int, input('''
+Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Left star.
+Example: 1 3 5 6
+Your Answer: ''').split())) 
+    listofFilesForRightStar = list(map(int, input('''
+Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Right star.
+Example: 2 7 10
+Your Answer: ''').split())) 
 
-    listofFilesForLeftStar = list(map(int, input("Enter a multiple value: ").split())) 
+    leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
+    rightSStoUse = [filenames[j] for j in listofFilesForRightStar]
+
+    wavelengthShift = float(input("The wavelength difference for the two stars(In angstroms): "))
+    lengthofTxtFile = 0
+    numberofdecimals = str(wavelengthShift)[::-1].find('.')
+    indexforShift = int(wavelengthShift * eval('1000000'[0:numberofdecimals+1]))
+    LSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+    RSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+    for data in leftSStoUse:
+        if lengthofTxtFile ==0:
+            lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
         
-
-
-
-LoadInSS(ssLocation,1)
+        LSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
+        LSS[int(data[:4])]=[LSS[int(data[:4])][0][indexforShift:],LSS[int(data[:4])][1][indexforShift:]]
+    for data in rightSStoUse:
+        RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
+                                    np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
+    decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
+    
+    return (LSS,RSS,decimals)
+        
+LeftSS,RightSS,decimalplaces = LoadInSS(ssLocation)

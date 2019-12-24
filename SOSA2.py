@@ -12,7 +12,8 @@ print('''                                 ******READ THIS******
      above 9999 or below 1000 you will get a strange result.   
           An example of a good Left SS name is L6500.txt           
           An example of a good Right SS name is R5700.txt
-     2. Make sure there is no header in the SS or the observed.''')
+     2. Make sure there is no header in the SS or the observed.
+     3. You must choose at least 3 SS files for the left and right stars''')
  
     
 #Loading in Packages that are necessary for SOSA to run
@@ -99,40 +100,63 @@ ssLocation, binaryLocation, excelLocation = FileLocations()
 #Loading Data.
 print('''
 -----------------------------------------------------------
-Loading Data...''')
-#----------------------------Beginning of Section I am working on------------------------------------
-#Putting the SS into a dictionary so they can be called 
-LeftSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
-RightSS={} #KEY: Temp of SS, ITEM: ['wavelength','flux'] 
+Loading Data...
+''')
 
-wavelengthShift = float(input("The wavelength difference for the two stars(In angstroms): "))
-lengthofTxtFile = 0
-numberofdecimals = str(wavelengthShift)[::-1].find('.')
-indexforShift = int(wavelengthShift * eval('1000000'[0:numberofdecimals+1]))
-decimalplaces=0 #for binary
-Leftstar = 0 
-for data in listdir(ssLocation):
-    if lengthofTxtFile ==0:
-        lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
+def LoadInData(FolderLocation,binaryLoc):
+    '''
+    Input: String SS Folder Path, float wavelength seperation  
+    Output: Dictionary of SS for left SS, Dictionary of SS for Right SS, an int of how many decimal places the SS have
+    Dictionaries; KEY: Temp of SS, ITEM: ['wavelength','flux']
+    '''
+    filenames = [name for name in listdir(FolderLocation)] #Extracting the file names 
+    for i in range(len(filenames)): #Displaying all the file names nicely so the user can pick which to use
+        print(str(i)+": "+ filenames[i])
         
-    LeftSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
-    LeftSS[int(data[:4])]=[LeftSS[int(data[:4])][0][indexforShift:],LeftSS[int(data[:4])][1][indexforShift:]]
-    Leftstar = int(data[:4])
-    RightSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
-                                np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
-decimalplaces = str(LeftSS[Leftstar][0][0])[::-1].find('.')
-print('Hope you are having a great day! :D')
+    listofFilesForLeftStar = list(map(int, input('''
+Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Left star.
+Example: 1 3 5 6
+Your Answer: ''').split())) 
+    listofFilesForRightStar = list(map(int, input('''
+Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Right star.
+Example: 2 7 10
+Your Answer: ''').split())) 
 
-#-----------------------------------------End of Section I am working on--------------------------
+    leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
+    rightSStoUse = [filenames[j] for j in listofFilesForRightStar]
 
-#Loading the Binary Spectra
-wav_binary,flux_binary=np.loadtxt(binaryLocation,unpack=True)
-wav_binary=np.round(wav_binary,decimalplaces)
+    wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
+    input("SOSA is about to display the observed spectra so you can determine the wavelength seperation of the two stars. If you are ready press enter")
+    plt.plot(wav_bi, flux_bi)
+    plt.show()
+    wavelengthShift = float(input("What is the wavelength difference for the two stars(In angstroms)? "))
 
- 
+
+    lengthofTxtFile = 0
+    numberofdecimals = str(wavelengthShift)[::-1].find('.')
+    indexforShift = int(wavelengthShift * eval('1000000'[0:numberofdecimals+1]))
+    LSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+    RSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+    for data in leftSStoUse:
+        if lengthofTxtFile ==0:
+            lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
+        
+        LSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
+        LSS[int(data[:4])]=[LSS[int(data[:4])][0][indexforShift:],LSS[int(data[:4])][1][indexforShift:]]
+    for data in rightSStoUse:
+        RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
+                                    np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
+    decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
+    wav_bi=np.round(wav_bi,decimals)
+    
+    return (LSS,RSS,wav_bi,flux_bi)
+        
+LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
+
+
 #Make Combinations
 
-def MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight):
+def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
     '''
     Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binaries : fluxes of binaries} , incredment for the weight 
     Output: {(Left SS Temp,Right SS Temp, Left SS Weight, Right SS Weight : Standard deviation from the observed spectra}
@@ -168,7 +192,7 @@ Enter the incredment for the weights:
     '''))
     print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
     print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
-    possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,delta_weight)
+    possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight)
 
 stdvalues=sorted([value for value in possibleCombinations.values()],key=float)
 pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleCombinations[pair]==value]
@@ -222,13 +246,10 @@ for l in LeftSS:
         for weight in np.arange(delta_weight,100.,delta_weight):
             weightschanging.append(possibleCombinations[(l,r,weight/100.,(100.-weight)/100.)])
             #teffspair.append(str(l)+" "+str(r))
-            
-            
         minstd=min(weightschanging)
         index=weightschanging.index(minstd)
         #split=teffspair[index].split(' ')
         #eachpairsbeststd.append([teffspair[index],minstd])
-        
         xpos.append(l)
         ypos.append(r)
         dz.append(minstd)
@@ -253,7 +274,8 @@ print("\n-----------------------------------------------------------\n")
     
 keepgoing='yes'
 while keepgoing.lower()!='no':
-    whattosay="Which pair do you want to look at overplotted with the binary's spectra?\nThere are "+str(len(pairs))+" to choose from.\n1 being the best and "+str(len(pairs))+" being the worse pair. "
+    whattosay='''Which pair do you want to look at overplotted with the binary's spectra?\nThere are '''+str(len(pairs))+''' to choose from.\n1 being the best 
+    and '''+str(len(pairs))+''' being the worse pair. '''
     pairnumber=int(input(whattosay))
     leftStartemp=pairs[pairnumber-1][0]
     rightStartemp=pairs[pairnumber-1][1]
