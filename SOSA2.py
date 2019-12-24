@@ -146,8 +146,7 @@ Your Answer: ''').split()))
         RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
                                     np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
     decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
-    wav_bi=np.round(wav_bi,decimals)
-    wav_bi += 0.37
+    #wav_bi=np.round(wav_bi,decimals) #Round the binary wavelength if necessary 
     return (LSS,RSS,wav_bi,flux_bi)
         
 LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
