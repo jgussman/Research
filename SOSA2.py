@@ -140,7 +140,6 @@ Your Answer: ''').split()))
     for data in leftSStoUse:
         if lengthofTxtFile ==0:
             lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
-        
         LSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
         LSS[int(data[:4])]=[LSS[int(data[:4])][0][indexforShift:],LSS[int(data[:4])][1][indexforShift:]]
     for data in rightSStoUse:
@@ -148,7 +147,7 @@ Your Answer: ''').split()))
                                     np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
     decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
     wav_bi=np.round(wav_bi,decimals)
-    
+    wav_bi += 0.37
     return (LSS,RSS,wav_bi,flux_bi)
         
 LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
