@@ -131,10 +131,9 @@ Your Answer: ''').split()))
     plt.show()
     wavelengthShift = float(input("What is the wavelength difference for the two stars(In angstroms)? "))
 
-
     lengthofTxtFile = 0
     numberofdecimals = str(wavelengthShift)[::-1].find('.')
-    indexforShift = int(wavelengthShift * eval('1000000'[0:numberofdecimals+1]))
+    indexforShift = int(wavelengthShift * eval('10000000000'[0:numberofdecimals+1]))
     LSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
     RSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
     for data in leftSStoUse:
@@ -146,7 +145,8 @@ Your Answer: ''').split()))
         RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
                                     np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
     decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
-    #wav_bi=np.round(wav_bi,decimals) #Round the binary wavelength if necessary 
+    #wav_bi=np.round(wav_bi,decimals) #Round the binary wavelength if necessary ***This is what is giving me an error of NA*** i.e. it is dividing by 0 
+    wav_bi += 0.370
     return (LSS,RSS,wav_bi,flux_bi)
         
 LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
@@ -186,6 +186,7 @@ if excelLocation!="None":
 print("DATA LOADED\n-----------------------------------------------------------\n")
 if delta_weight==0:
     delta_weight=float(input('''
+-----------------------------------------------------------
 Enter the incredment for the weights:
     '''))
     print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
