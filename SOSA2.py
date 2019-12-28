@@ -119,7 +119,7 @@ Example: 1 3 5 6
 Your Answer: ''').split())) 
     listofFilesForRightStar = list(map(int, input('''
 Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Right star.
-Example: 2 7 10
+Example: 0 2 7 10 11
 Your Answer: ''').split())) 
 
     leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
@@ -128,6 +128,7 @@ Your Answer: ''').split()))
     wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
     input("SOSA is about to display the observed spectra so you can determine the wavelength seperation of the two stars. If you are ready press enter")
     plt.plot(wav_bi, flux_bi)
+    plt.xlabel("Angstrom")
     plt.show()
     wavelengthShift = float(input("What is the wavelength difference for the two stars(In angstroms)? "))
 
@@ -146,14 +147,17 @@ Your Answer: ''').split()))
                                     np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
     decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
     #wav_bi=np.round(wav_bi,decimals) #Round the binary wavelength if necessary ***This is what is giving me an error of NA*** i.e. it is dividing by 0 
-    wav_bi += 0.370
+    binary_shift_question = input("Do you need to shift your binary spectra's wavelength?(Y/N)")
+    if binary_shift_question.lower() in ['y','yes']:
+        binary_shift = float(input("Enter the number (In angstroms) of how much you would like to shift your binary"))
+        wav_bi += binary_shift
+
     return (LSS,RSS,wav_bi,flux_bi)
         
 LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
 
 
 #Make Combinations
-
 def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
     '''
     Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binaries : fluxes of binaries} , incredment for the weight 
@@ -183,14 +187,15 @@ if excelLocation!="None":
     #To see what is the incridments
     delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
 
-print("DATA LOADED\n-----------------------------------------------------------\n")
+print("DATA LOADED")
 if delta_weight==0:
     delta_weight=float(input('''
 -----------------------------------------------------------
 Enter the incredment for the weights:
     '''))
     print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
-    print("SOSA is currently making "+str(float(len(LeftSS))*float(len(RightSS))*100./delta_weight)+" Different Pairs!")
+    numberofpairs = float(len(LeftSS))*float(len(RightSS))*100./delta_weight
+    print("SOSA is currently making "+str(numberofpairs)+" Different Pairs!")
     possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight)
 
 stdvalues=sorted([value for value in possibleCombinations.values()],key=float)
@@ -198,40 +203,43 @@ pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleC
 
 ####WRITING TO EXCEL
 if excelLocation=="None":
-    print("Would you like to put your Combinations in an excel file?")
-    makeAnExcelFile=''
-    excelFilemade=''
-    while not makeAnExcelFile:
-        makeAnExcelFile=input('Yes or No\n')
-        if makeAnExcelFile.lower()=='yes':
-            wb = Workbook() 
-            # add_sheet is used to create sheet. 
-            sheet1 = wb.add_sheet('Sheet 1') 
-            sheet1.write(0,0, "LEFT TEMP")
-            sheet1.write(0,1,'RIGHT TEMP')
-            sheet1.write(0,2,"LEFT WEIGHT")
-            sheet1.write(0,3, "RIGHT WEIGHT")
-            sheet1.write(0,4, "Standard Dev")
-            row=1 
-            col=1
-            for l in LeftSS:
-                for r in RightSS:
-                    for weight in np.arange(delta_weight,100.,delta_weight):                        
-                        sheet1.write(row, 0, l)
-                        sheet1.write(row, 1, r)
-                        sheet1.write(row, 2, weight/100.)
-                        sheet1.write(row, 3, (100-weight)/100.)
-                        sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) 
-                        row+=1
+    if (numberofpairs<65500):
+        print("The number of pairs is over 65500. Therefore you can not create an excel file")
+    else:
+        print("Would you like to put your Combinations in an excel file?")
+        makeAnExcelFile=''
+        excelFilemade=''
+        while not makeAnExcelFile:
+            makeAnExcelFile=input('Yes or No\n')
+            if makeAnExcelFile.lower()=='yes':
+                wb = Workbook() 
+                # add_sheet is used to create sheet. 
+                sheet1 = wb.add_sheet('Sheet 1') 
+                sheet1.write(0,0, "LEFT TEMP")
+                sheet1.write(0,1,'RIGHT TEMP')
+                sheet1.write(0,2,"LEFT WEIGHT")
+                sheet1.write(0,3, "RIGHT WEIGHT")
+                sheet1.write(0,4, "Standard Dev")
+                row=1 
+                col=1
+                for l in LeftSS:
+                    for r in RightSS:
+                        for weight in np.arange(delta_weight,100.,delta_weight):                        
+                            sheet1.write(row, 0, l)
+                            sheet1.write(row, 1, r)
+                            sheet1.write(row, 2, weight/100.)
+                            sheet1.write(row, 3, (100-weight)/100.)
+                            sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) 
+                            row+=1
 
-            whattocalltheexcelfile=input("\n This file will be created where this code is running.What you you like to call this excel file?\n")+'.xls'
-            print("\n Excel File Name: "+whattocalltheexcelfile)
-            wb.save(whattocalltheexcelfile)
-        elif makeAnExcelFile.lower()=='no':
-            print('No excel file will be made!')
-        else:
-            print("***Invalid Response***")
-            makeAnExcelFile=''
+                whattocalltheexcelfile=input("\n This file will be created where this code is running.What you you like to call this excel file?\n")+'.xls'
+                print("\n Excel File Name: "+whattocalltheexcelfile)
+                wb.save(whattocalltheexcelfile)
+            elif makeAnExcelFile.lower()=='no':
+                print('No excel file will be made!')
+            else:
+                print("***Invalid Response***")
+                makeAnExcelFile=''
 print("\n-----------------------------------------------------------\n")
 
 eachpairsbeststd=[]
@@ -258,6 +266,8 @@ eachpairsbeststd.sort()
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.plot_trisurf(xpos, ypos, dz, cmap=cm.jet, linewidth=0.9)
+plt.xlabel("Temperture(Kelvin)")
+plt.ylabel("Temperture(Kelvin)")
 plt.show()
 save3dplot=input("Would you like to save this plot? (Yes/No): ")
 if save3dplot.lower()=='yes':
@@ -284,6 +294,7 @@ while keepgoing.lower()!='no':
     flux_sum=(LeftSS[leftStartemp][1]*lw+RightSS[rightStartemp][1]*rw)
     title='Left Star:'+str(leftStartemp)+'K  Weight: '+str(lw*100)+"%\nRight Star: "+str(rightStartemp)+"K  Weight: "+str(rw*100)+"%"
     plt.title(title)
+    plt.xlabel("Angstrom")
     plt.plot(wav_binary,flux_binary,'black')
     plt.plot(wav_sum,flux_sum,'r--')
     plt.legend(['Observed','Synthetic'])

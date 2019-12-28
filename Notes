@@ -2,9 +2,19 @@ SOSA2
 -Need to add in the functionality that allows the user to put in a whole binary file and then pick the wavelengths you want to look at.
 -Right now I am assuming the observed has more decimal places than the SS. This could cause a problem
 -Display the observed
--I'm staying the seperation of the two stars for HIP94034 is 3.641 angstroms
+
 -******critical error. If The dealta lambda is not at least to the 3 decimal place or the 3rd decimal place is a zero the program fails. For some reason it fails for temps 5800-6000K 
 -I should add an opition if you would like to use all of the files
 
+
+-The files that through the exceptions is:
+6000K 
+
+
 -HIP94034
--adding 0.37 to the observed wavelength so they ***mathch up***
+-I'm staying the seperation of the two stars for HIP94034 is 3.591 angstroms
+-adding 0.35 to the observed wavelength so they ***mathch up***
+
+
+--IDEA:
+Make a file where the user changes all the parameters in a txt file. then they dont have to be continually prompted stuff
