@@ -198,12 +198,13 @@ Enter the incredment for the weights:
     print("SOSA is currently making "+str(numberofpairs)+" Different Pairs!")
     possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight)
 
-stdvalues=sorted([value for value in possibleCombinations.values()],key=float)
-pairs=[pair for value in stdvalues for pair in possibleCombinations if possibleCombinations[pair]==value]
+
+pairs=sorted(possibleCombinations.items(), key = lambda kv:(kv[1], kv[0])) #The pair at the 0th index is the best matched to the observed spectra
+
 
 ####WRITING TO EXCEL
 if excelLocation=="None":
-    if (numberofpairs<65500):
+    if (numberofpairs>65500):
         print("The number of pairs is over 65500. Therefore you can not create an excel file")
     else:
         print("Would you like to put your Combinations in an excel file?")
@@ -283,13 +284,14 @@ print("\n-----------------------------------------------------------\n")
     
 keepgoing='yes'
 while keepgoing.lower()!='no':
-    whattosay='''Which pair do you want to look at overplotted with the binary's spectra?\nThere are '''+str(len(pairs))+''' to choose from.\n1 being the best 
-    and '''+str(len(pairs))+''' being the worse pair. '''
+    whattosay='''
+Which pair do you want to look at overplotted with the binary's spectra?\nThere are '''+str(len(pairs))+''' to choose from.
+ 1 being the best and '''+str(len(pairs))+''' being the worse pair. '''
     pairnumber=int(input(whattosay))
-    leftStartemp=pairs[pairnumber-1][0]
-    rightStartemp=pairs[pairnumber-1][1]
-    lw=pairs[pairnumber-1][2]
-    rw=pairs[pairnumber-1][3]
+    leftStartemp=pairs[pairnumber-1][0][0]
+    rightStartemp=pairs[pairnumber-1][0][1]
+    lw=pairs[pairnumber-1][0][2]
+    rw=pairs[pairnumber-1][0][3]
     wav_sum=(LeftSS[leftStartemp][0]+RightSS[rightStartemp][0])/2
     flux_sum=(LeftSS[leftStartemp][1]*lw+RightSS[rightStartemp][1]*rw)
     title='Left Star:'+str(leftStartemp)+'K  Weight: '+str(lw*100)+"%\nRight Star: "+str(rightStartemp)+"K  Weight: "+str(rw*100)+"%"
