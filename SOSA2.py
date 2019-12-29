@@ -26,7 +26,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import xlwt
 from xlwt import Workbook
 from os import path
-import pandas as pd
+import pandas as pd 
+from astropy.table import Table, Column, MaskedColumn
+from astropy.io import ascii
 
 
 def FileLocations():
@@ -37,10 +39,10 @@ def FileLocations():
     binarypath = BinaryFileQuestion()
     haveExcelFilequestion = input('''
 -----------------------------------------------------------
-Do you have previously generated SS that you would like to use? (Yes/No)''')
-    if haveExcelFilequestion.lower() in ['yes','y']:
-        excelpath = ExcelFileQuestion()
-        return ("None",binarypath,excelpath)
+Do you have previously generated SS that you would like to use? (Y/N)''')
+    if haveExistingFilequestion.lower() in ['yes','y']:
+        existingpath = ExistingFileQuestion()
+        return ("None",binarypath,existingpath)
     else:
         sspath = SSFolderQuestion()
         return (sspath,binarypath,"None")
@@ -78,7 +80,7 @@ Enter the path to your Observed Binary Spectra!
             print("Binary File Path Found!")
             return binaryLocation
 
-def ExcelFileQuestion(): 
+def ExistingFileQuestion(): 
     '''
     Input: None
     Output: String of Excel file path
@@ -88,14 +90,14 @@ def ExcelFileQuestion():
 Enter the path to the excel file. 
     EXAMPLE:/home/jgussman/Research/Combinations/HIP86201SS.xls''')
     while True:
-        excelLocation=input("\nYours: ")
-        if  not path.exists(excelLocation):
+        Location=input("\nYours: ")
+        if  not path.exists(Location):
             print("This location does NOT exist! Try again!")
         else:
             print("Excel File Path Found!")
-            return excelLocation                                                    
+            return Location                                                    
                 
-ssLocation, binaryLocation, excelLocation = FileLocations()
+ssLocation, binaryLocation, existingLocation = FileLocations()
 
 #Loading Data.
 print('''
@@ -103,58 +105,77 @@ print('''
 Loading Data...
 ''')
 
-def LoadInData(FolderLocation,binaryLoc):
+def LoadInData(FolderLocation,existingLoc,binaryLoc):
     '''
     Input: String SS Folder Path, float wavelength seperation  
-    Output: Dictionary of SS for left SS, Dictionary of SS for Right SS, an int of how many decimal places the SS have
+    Output: Dic of SS for left Star, Dic of SS for Right Star, Array of Binary's Wavelength, Array of Binary's Flux, Possible Combinations, difference in Weight
     Dictionaries; KEY: Temp of SS, ITEM: ['wavelength','flux']
+    left star and right star dictionaries will be "None" if existingLoc is NOT "None" because that means you don't need to create new pairs
+    Possible Combinations will be "None" if existingLoc is "None" and delta weight will = 0
     '''
-    filenames = [name for name in listdir(FolderLocation)] #Extracting the file names 
-    for i in range(len(filenames)): #Displaying all the file names nicely so the user can pick which to use
-        print(str(i)+": "+ filenames[i])
-        
-    listofFilesForLeftStar = list(map(int, input('''
+    #Loading Data from Excel or ascii (If there was a an excel file) 
+    delta_weight=0
+    possibleCombos={}
+    if existingLoc!="None":
+        LSS,RSS = ("None","None")
+        if existingLocation[-4:]==".xls":
+            exceldataframe=pd.read_excel(excelLocation)
+            for i in range(len(exceldataframe)):
+                possibleCombos[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
+            #To see what is the incridments
+            delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
+        elif existingLocation[-4:]==".asc":
+            l,r,lw,rw,std = np.loadtxt("test.asc",unpack=True)
+            possibleCombos=dict(list(map(lambda l,r,lw,rw,std: ((l,r,lw,rw),std),l,r,lw,rw,std)))
+            delta_weight = float(lw[1]-lw[0]) 
+    else:
+        filenames = [name for name in listdir(FolderLocation)] #Extracting the file names 
+        for i in range(len(filenames)): #Displaying all the file names nicely so the user can pick which to use
+            print(str(i)+": "+ filenames[i])
+            
+        listofFilesForLeftStar = list(map(int, input('''
 Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Left star.
 Example: 1 3 5 6
 Your Answer: ''').split())) 
-    listofFilesForRightStar = list(map(int, input('''
+        listofFilesForRightStar = list(map(int, input('''
 Type in the number/s seperated by spaces corresponding to the Synthetic Spectra files you want to be used for the Right star.
 Example: 0 2 7 10 11
 Your Answer: ''').split())) 
 
-    leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
-    rightSStoUse = [filenames[j] for j in listofFilesForRightStar]
+        leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
+        rightSStoUse = [filenames[j] for j in listofFilesForRightStar]
 
-    wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
-    input("SOSA is about to display the observed spectra so you can determine the wavelength seperation of the two stars. If you are ready press enter")
-    plt.plot(wav_bi, flux_bi)
-    plt.xlabel("Angstrom")
-    plt.show()
-    wavelengthShift = float(input("What is the wavelength difference for the two stars(In angstroms)? "))
+        wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
+        input("SOSA is about to display the observed spectra so you can determine the wavelength seperation of the two stars. If you are ready press enter")
+        plt.plot(wav_bi, flux_bi)
+        plt.xlabel("Angstrom")
+        plt.show()
+        wavelengthShift = float(input("What is the wavelength difference for the two stars(In angstroms)? "))
 
-    lengthofTxtFile = 0
-    numberofdecimals = str(wavelengthShift)[::-1].find('.')
-    indexforShift = int(wavelengthShift * eval('10000000000'[0:numberofdecimals+1]))
-    LSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
-    RSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
-    for data in leftSStoUse:
-        if lengthofTxtFile ==0:
-            lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
-        LSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
-        LSS[int(data[:4])]=[LSS[int(data[:4])][0][indexforShift:],LSS[int(data[:4])][1][indexforShift:]]
-    for data in rightSStoUse:
-        RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
-                                    np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
-    decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
+        lengthofTxtFile = 0
+        numberofdecimals = str(wavelengthShift)[::-1].find('.')
+        indexforShift = int(wavelengthShift * eval('10000000000'[0:numberofdecimals+1]))
+        LSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+        RSS = {} #KEY: Temp of SS, ITEM: ['wavelength','flux']
+        for data in leftSStoUse:
+            if lengthofTxtFile ==0:
+                lengthofTxtFile = len(np.loadtxt(ssLocation+data,unpack=True)[0])
+            LSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0]+wavelengthShift,np.loadtxt(ssLocation+data,unpack=True)[1]]
+            LSS[int(data[:4])]=[LSS[int(data[:4])][0][indexforShift:],LSS[int(data[:4])][1][indexforShift:]]
+        for data in rightSStoUse:
+            RSS[int(data[:4])]=[np.loadtxt(ssLocation+data,unpack=True)[0][:lengthofTxtFile-indexforShift],
+                                        np.loadtxt(ssLocation+data,unpack=True)[1][:lengthofTxtFile-indexforShift]]
+        decimals = str(LSS[int(leftSStoUse[0][:4])][0][0])[::-1].find('.')
+
     #wav_bi=np.round(wav_bi,decimals) #Round the binary wavelength if necessary ***This is what is giving me an error of NA*** i.e. it is dividing by 0 
     binary_shift_question = input("Do you need to shift your binary spectra's wavelength?(Y/N)")
     if binary_shift_question.lower() in ['y','yes']:
         binary_shift = float(input("Enter the number (In angstroms) of how much you would like to shift your binary"))
         wav_bi += binary_shift
 
-    return (LSS,RSS,wav_bi,flux_bi)
+    return (LSS,RSS,wav_bi,flux_bi,possibleCombos,delta_weight)
         
-LeftSS,RightSS, wav_binary, flux_binary= LoadInData(ssLocation,binaryLocation)
+LeftSS,RightSS, wav_binary, flux_binary,possibleCombinations,delta_weight= LoadInData(ssLocation,existingLocation,binaryLocation)
 
 
 #Make Combinations
@@ -176,16 +197,8 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
                 indexINTObinary=np.where(np.isin(wav_binary,wav_sum))
                 combinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
     return combinations 
-#Loading Data from Excel (If there was a an excel file) and if not it will begin finding the possible combinations
-#If there is a excel file then assigning its' results to possibleCombinations and asigning it to the 
-delta_weight=0
-if excelLocation!="None":
-    possibleCombinations={}
-    exceldataframe=pd.read_excel(excelLocation)
-    for i in range(len(exceldataframe)):
-        possibleCombinations[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
-    #To see what is the incridments
-    delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
+
+
 
 print("DATA LOADED")
 if delta_weight==0:
@@ -202,45 +215,8 @@ Enter the incredment for the weights:
 pairs=sorted(possibleCombinations.items(), key = lambda kv:(kv[1], kv[0])) #The pair at the 0th index is the best matched to the observed spectra
 
 
-####WRITING TO EXCEL
-if excelLocation=="None":
-    if (numberofpairs>65500):
-        print("The number of pairs is over 65500. Therefore you can not create an excel file")
-    else:
-        print("Would you like to put your Combinations in an excel file?")
-        makeAnExcelFile=''
-        excelFilemade=''
-        while not makeAnExcelFile:
-            makeAnExcelFile=input('Yes or No\n')
-            if makeAnExcelFile.lower()=='yes':
-                wb = Workbook() 
-                # add_sheet is used to create sheet. 
-                sheet1 = wb.add_sheet('Sheet 1') 
-                sheet1.write(0,0, "LEFT TEMP")
-                sheet1.write(0,1,'RIGHT TEMP')
-                sheet1.write(0,2,"LEFT WEIGHT")
-                sheet1.write(0,3, "RIGHT WEIGHT")
-                sheet1.write(0,4, "Standard Dev")
-                row=1 
-                col=1
-                for l in LeftSS:
-                    for r in RightSS:
-                        for weight in np.arange(delta_weight,100.,delta_weight):                        
-                            sheet1.write(row, 0, l)
-                            sheet1.write(row, 1, r)
-                            sheet1.write(row, 2, weight/100.)
-                            sheet1.write(row, 3, (100-weight)/100.)
-                            sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) 
-                            row+=1
 
-                whattocalltheexcelfile=input("\n This file will be created where this code is running.What you you like to call this excel file?\n")+'.xls'
-                print("\n Excel File Name: "+whattocalltheexcelfile)
-                wb.save(whattocalltheexcelfile)
-            elif makeAnExcelFile.lower()=='no':
-                print('No excel file will be made!')
-            else:
-                print("***Invalid Response***")
-                makeAnExcelFile=''
+
 print("\n-----------------------------------------------------------\n")
 
 eachpairsbeststd=[]
@@ -312,4 +288,52 @@ Which pair do you want to look at overplotted with the binary's spectra?\nThere 
         plt.savefig(whattocallit)
         print('Image has been saved as '+whattocallit+'.png\n')
     keepgoing=input("Would you like to plot some more pairs? (Yes/No): ")
+
+####WRITING TO EXCEL
+if existingLocation=="None":
+    storeAnswer = input("Would you like to store your Combinations in an Ascii File or Excel File?(No,Ascii,Excel)")
+    if storeAnswer.lower()=="excel":
+        if (numberofpairs>65500):
+            print("The number of pairs is over 65500. Therefore you can not create an excel file")
+        else:
+            print("Would you like to put your Combinations in an excel file?")
+            makeAnExcelFile=''
+            excelFilemade=''
+            while not makeAnExcelFile:
+                makeAnExcelFile=input('Yes or No\n')
+                if makeAnExcelFile.lower()=='yes':
+                    wb = Workbook() 
+                    # add_sheet is used to create sheet. 
+                    sheet1 = wb.add_sheet('Sheet 1') 
+                    sheet1.write(0,0, "LEFT TEMP")
+                    sheet1.write(0,1,'RIGHT TEMP')
+                    sheet1.write(0,2,"LEFT WEIGHT")
+                    sheet1.write(0,3, "RIGHT WEIGHT")
+                    sheet1.write(0,4, "Standard Dev")
+                    row=1 
+                    col=1
+                    for l in LeftSS:
+                        for r in RightSS:
+                            for weight in np.arange(delta_weight,100.,delta_weight):                        
+                                sheet1.write(row, 0, l)
+                                sheet1.write(row, 1, r)
+                                sheet1.write(row, 2, weight/100.)
+                                sheet1.write(row, 3, (100-weight)/100.)
+                                sheet1.write(row, 4, possibleCombinations[(l,r,weight/100.,(100-weight)/100.)]) 
+                                row+=1
+                    whattocalltheexcelfile=input("\n This file will be created where this code is running.What you you like to call this excel file?\n")+'.xls'
+                    print("\n Excel File Name: "+whattocalltheexcelfile)
+                    wb.save(whattocalltheexcelfile)
+    elif(storeAnswer.lower() == "ascii"):
+        l = [map(lambda x: x[0][0],sortedbestpairs)]
+        r = [map(lambda x: x[0][1],sortedbestpairs)]
+        lw = [map(lambda x: x[0][2],sortedbestpairs)]
+        rw = [map(lambda x: x[0][3],sortedbestpairs)]
+        std = [map(lambda x: x[1],sortedbestpairs)]
+        whattocall = input("What would you like to call the Ascii file?")
+        whattocall +=".asc"
+        ascii.write(Table(l,r,lw,rw,std),whattocall)
+    else:
+        print("Pairs were not stored")
+
 print("\n-----------------------------------------------------------\nSOSA has now ended!")
