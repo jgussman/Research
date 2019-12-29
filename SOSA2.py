@@ -1,19 +1,10 @@
 print("SOSA means 'Synthetic & Observed Spectra  Analyzer'")
 print('''                                 ******READ THIS******
       The purpose of this program is to find Synthetic Spectra (SS) pairs that match accurately with an observed 
-          binary"+str("'s")+" spectra.\n\n2.For this program to be successful you must run it using python 3!
+          binary"+str("'s")+" spectra.
+          2.For this program to be successful you must run it using python 3!
                               *****Making Sure This Runs Smoothly***** 
-     n0. I highly suggest that you only have the SS you want to use in the file location. 
-     1. The way this program chooses which SS is for the Left star in the binary and which is for the right star is by
-     looking at the files"+str("'")+" name.\n       
-     1.1 It looks if the file name has (l or L) as the first character signifing that it is the left star. Vis Versa 
-     for the right analog. It also looks if the last 4 characters in the name is .txt        
-     1.2 the second through fith characters need to be the Temperture of that SS. This means if your SS temp goes 
-     above 9999 or below 1000 you will get a strange result.   
-          An example of a good Left SS name is L6500.txt           
-          An example of a good Right SS name is R5700.txt
-     2. Make sure there is no header in the SS or the observed.
-     3. You must choose at least 3 SS files for the left and right stars''')
+     ''')
  
     
 #Loading in Packages that are necessary for SOSA to run
@@ -37,7 +28,7 @@ def FileLocations():
     Output: A tuple of strings (SS Folder Path if have,Binary File Path,Excel File Path if have)
     '''
     binarypath = BinaryFileQuestion()
-    haveExcelFilequestion = input('''
+    haveExistingFilequestion = input('''
 -----------------------------------------------------------
 Do you have previously generated SS that you would like to use? (Y/N)''')
     if haveExistingFilequestion.lower() in ['yes','y']:
@@ -113,6 +104,7 @@ def LoadInData(FolderLocation,existingLoc,binaryLoc):
     left star and right star dictionaries will be "None" if existingLoc is NOT "None" because that means you don't need to create new pairs
     Possible Combinations will be "None" if existingLoc is "None" and delta weight will = 0
     '''
+    wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
     #Loading Data from Excel or ascii (If there was a an excel file) 
     delta_weight=0
     possibleCombos={}
@@ -145,7 +137,7 @@ Your Answer: ''').split()))
         leftSStoUse = [filenames[i] for i in listofFilesForLeftStar]
         rightSStoUse = [filenames[j] for j in listofFilesForRightStar]
 
-        wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
+        
         input("SOSA is about to display the observed spectra so you can determine the wavelength seperation of the two stars. If you are ready press enter")
         plt.plot(wav_bi, flux_bi)
         plt.xlabel("Angstrom")
@@ -325,14 +317,16 @@ if existingLocation=="None":
                     print("\n Excel File Name: "+whattocalltheexcelfile)
                     wb.save(whattocalltheexcelfile)
     elif(storeAnswer.lower() == "ascii"):
-        l = [map(lambda x: x[0][0],sortedbestpairs)]
-        r = [map(lambda x: x[0][1],sortedbestpairs)]
-        lw = [map(lambda x: x[0][2],sortedbestpairs)]
-        rw = [map(lambda x: x[0][3],sortedbestpairs)]
-        std = [map(lambda x: x[1],sortedbestpairs)]
+        l = list(map(lambda x: x[0][0],pairs))
+        r = list(map(lambda x: x[0][1],pairs))
+        lw = list(map(lambda x: x[0][2],pairs))
+        rw = list(map(lambda x: x[0][3],pairs))
+        std = list(map(lambda x: x[1],pairs))
+        print(std)
         whattocall = input("What would you like to call the Ascii file?")
         whattocall +=".asc"
-        ascii.write(Table(l,r,lw,rw,std),whattocall)
+        data = Table([l,r,lw,rw,std],names=["L_Temp","R_Temp","L_Weight","R_Weight","Standard Dev"])
+        ascii.write(data,whattocall)
     else:
         print("Pairs were not stored")
 

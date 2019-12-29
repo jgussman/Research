@@ -21,9 +21,10 @@ lw = [map(lambda x: x[0][2],sortedbestpairs)]
 rw = [map(lambda x: x[0][3],sortedbestpairs)]
 std = [map(lambda x: x[1],sortedbestpairs)]
 ascii.write(Table(l,r,lw,rw,std),"name.asc")
-l,r,lw,rw,std = np.loadtxt("test.asc",unpack=True)
-possibleCombinations=dict(list(map(lambda l,r,lw,rw,std: ((l,r,lw,rw),std),l,r,lw,rw,std)))
-delta_weight = float(lw[1]-lw[0])
 
-print(possibleCombinations)
-print(delta_weight)
+# l,r,lw,rw,std = np.loadtxt("test.asc",unpack=True)
+# possibleCombinations=dict(list(map(lambda l,r,lw,rw,std: ((l,r,lw,rw),std),l,r,lw,rw,std)))
+# delta_weight = float(lw[1]-lw[0])
+
+# print(possibleCombinations)
+# print(delta_weight)
