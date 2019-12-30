@@ -74,11 +74,11 @@ Enter the path to your Observed Binary Spectra!
 def ExistingFileQuestion(): 
     '''
     Input: None
-    Output: String of Excel file path
+    Output: String of Ascii/Excel file path
     '''
     print('''
 -----------------------------------------------------------
-Enter the path to the excel file. 
+Enter the path to the ascii/excel file. 
     EXAMPLE:/home/jgussman/Research/Combinations/HIP86201SS.xls''')
     while True:
         Location=input("\nYours: ")
@@ -101,25 +101,45 @@ def LoadInData(FolderLocation,existingLoc,binaryLoc):
     Input: String SS Folder Path, float wavelength seperation  
     Output: Dic of SS for left Star, Dic of SS for Right Star, Array of Binary's Wavelength, Array of Binary's Flux, Possible Combinations, difference in Weight
     Dictionaries; KEY: Temp of SS, ITEM: ['wavelength','flux']
-    left star and right star dictionaries will be "None" if existingLoc is NOT "None" because that means you don't need to create new pairs
+    left star and right star dictionaries will be have the Temps as keys but "NA" for the items if existingLoc is NOT "None" because that means you don't need to create new pairs
     Possible Combinations will be "None" if existingLoc is "None" and delta weight will = 0
     '''
     wav_bi,flux_bi=np.loadtxt(binaryLoc,unpack=True)
     #Loading Data from Excel or ascii (If there was a an excel file) 
     delta_weight=0
-    possibleCombos={}
+    possibleCombos,LSS,RSS={},{},{}
     if existingLoc!="None":
         LSS,RSS = ("None","None")
         if existingLocation[-4:]==".xls":
-            exceldataframe=pd.read_excel(excelLocation)
-            for i in range(len(exceldataframe)):
+            LeftList,RightList = [],[]
+            exceldataframe=pd.read_excel(existingLoc)
+            for i in range(len(existingLoc)):
                 possibleCombos[(float(exceldataframe.loc[i][0]),float(exceldataframe.loc[i][1]),float(exceldataframe.loc[i][2]),float(exceldataframe.loc[i][3]))]=float(exceldataframe.loc[i][4])
+                if ((float(exceldataframe.loc[i][0]),"NA")) not in LeftList:
+                    LeftList.append((float(exceldataframe.loc[i][0]),"NA"))
+                if (float(exceldataframe.loc[i][1]),"NA") not in RightList:
+                    RightList.append((float(exceldataframe.loc[i][1]),"NA"))
             #To see what is the incridments
             delta_weight=((exceldataframe.loc[2][2])*100-(exceldataframe.loc[1][2])*100)
+            LSS = dict(list(LeftList)) #This has not been tested yet
+            RSS = dict(list(RightList)) #This has not been tested yet
         elif existingLocation[-4:]==".asc":
-            l,r,lw,rw,std = np.loadtxt("test.asc",unpack=True)
-            possibleCombos=dict(list(map(lambda l,r,lw,rw,std: ((l,r,lw,rw),std),l,r,lw,rw,std)))
-            delta_weight = float(lw[1]-lw[0]) 
+            try:
+                l,r,lw,rw,std = np.loadtxt(existingLoc,unpack=True,skiprows=0)  #In case there isn't a header i.e. the user removed it 
+            except:
+                l,r,lw,rw,std = np.loadtxt(existingLoc,unpack=True,skiprows=1) 
+            
+            keys = list(map(lambda w,x,y,z: (w,x,y,z),l,r,lw,rw))
+            keysandvalues = list(map(lambda x,y: (x,y), keys, std))
+            possibleCombos = dict(keysandvalues)
+            print(lw[0])
+            print(lw[1])
+            print(str(float(lw[0]))[::-1].find('.'))
+            decimalplaces = str(float(lw[0]))[::-1].find('.')
+            delta_weight = round(float(lw[0])-float(lw[1]),decimalplaces)*100
+            LSS = dict(list(map(lambda x,y: (x,y),l,["NA"]*len(l))))
+            RSS = dict(list(map(lambda x,y: (x,y),r,["NA"]*len(r))))
+
     else:
         filenames = [name for name in listdir(FolderLocation)] #Extracting the file names 
         for i in range(len(filenames)): #Displaying all the file names nicely so the user can pick which to use
@@ -164,7 +184,6 @@ Your Answer: ''').split()))
     if binary_shift_question.lower() in ['y','yes']:
         binary_shift = float(input("Enter the number (In angstroms) of how much you would like to shift your binary"))
         wav_bi += binary_shift
-
     return (LSS,RSS,wav_bi,flux_bi,possibleCombos,delta_weight)
         
 LeftSS,RightSS, wav_binary, flux_binary,possibleCombinations,delta_weight= LoadInData(ssLocation,existingLocation,binaryLocation)
@@ -206,11 +225,8 @@ Enter the incredment for the weights:
 
 pairs=sorted(possibleCombinations.items(), key = lambda kv:(kv[1], kv[0])) #The pair at the 0th index is the best matched to the observed spectra
 
-
-
-
+#3D plotting
 print("\n-----------------------------------------------------------\n")
-
 eachpairsbeststd=[]
 xpos=[]
 ypos=[]
@@ -220,6 +236,7 @@ for l in LeftSS:
         #teffspair=[]
         weightschanging=[]
         for weight in np.arange(delta_weight,100.,delta_weight):
+            weight = float(weight)
             weightschanging.append(possibleCombinations[(l,r,weight/100.,(100.-weight)/100.)])
             #teffspair.append(str(l)+" "+str(r))
         minstd=min(weightschanging)
@@ -229,7 +246,7 @@ for l in LeftSS:
         xpos.append(l)
         ypos.append(r)
         dz.append(minstd)
-        
+
 eachpairsbeststd.sort()
 
 fig = plt.figure()
@@ -249,46 +266,49 @@ if save3dplot.lower()=='yes':
 else:
     print("\nPlot was not Saved!")
 print("\n-----------------------------------------------------------\n")
-    
-keepgoing='yes'
-while keepgoing.lower()!='no':
-    whattosay='''
-Which pair do you want to look at overplotted with the binary's spectra?\nThere are '''+str(len(pairs))+''' to choose from.
- 1 being the best and '''+str(len(pairs))+''' being the worse pair. '''
-    pairnumber=int(input(whattosay))
-    leftStartemp=pairs[pairnumber-1][0][0]
-    rightStartemp=pairs[pairnumber-1][0][1]
-    lw=pairs[pairnumber-1][0][2]
-    rw=pairs[pairnumber-1][0][3]
-    wav_sum=(LeftSS[leftStartemp][0]+RightSS[rightStartemp][0])/2
-    flux_sum=(LeftSS[leftStartemp][1]*lw+RightSS[rightStartemp][1]*rw)
-    title='Left Star:'+str(leftStartemp)+'K  Weight: '+str(lw*100)+"%\nRight Star: "+str(rightStartemp)+"K  Weight: "+str(rw*100)+"%"
-    plt.title(title)
-    plt.xlabel("Angstrom")
-    plt.plot(wav_binary,flux_binary,'black')
-    plt.plot(wav_sum,flux_sum,'r--')
-    plt.legend(['Observed','Synthetic'])
-    plt.show()
-    savethisoverplot=input("Would you like to save this overplot? (Yes/No): ")
-    if savethisoverplot.lower()=='yes':
+#Overplotting
+if(existingLocation=="None"):
+    keepgoing='yes'
+    while keepgoing.lower()!='no':
+        whattosay='''
+    Which pair do you want to look at overplotted with the binary's spectra?\nThere are '''+str(len(pairs))+''' to choose from.
+    1 being the best and '''+str(len(pairs))+''' being the worse pair. '''
+        pairnumber=int(input(whattosay))
+        leftStartemp=pairs[pairnumber-1][0][0]
+        rightStartemp=pairs[pairnumber-1][0][1]
+        lw=pairs[pairnumber-1][0][2]
+        rw=pairs[pairnumber-1][0][3]
+        wav_sum=(LeftSS[leftStartemp][0]+RightSS[rightStartemp][0])/2
+        flux_sum=(LeftSS[leftStartemp][1]*lw+RightSS[rightStartemp][1]*rw)
         title='Left Star:'+str(leftStartemp)+'K  Weight: '+str(lw*100)+"%\nRight Star: "+str(rightStartemp)+"K  Weight: "+str(rw*100)+"%"
         plt.title(title)
+        plt.xlabel("Angstrom")
         plt.plot(wav_binary,flux_binary,'black')
         plt.plot(wav_sum,flux_sum,'r--')
         plt.legend(['Observed','Synthetic'])
-        whattocallit=input("What would you like to call this plot? ")
-        plt.savefig(whattocallit)
-        print('Image has been saved as '+whattocallit+'.png\n')
-    keepgoing=input("Would you like to plot some more pairs? (Yes/No): ")
-
+        plt.show()
+        savethisoverplot=input("Would you like to save this overplot? (Yes/No): ")
+        if savethisoverplot.lower()=='yes':
+            title='Left Star:'+str(leftStartemp)+'K  Weight: '+str(lw*100)+"%\nRight Star: "+str(rightStartemp)+"K  Weight: "+str(rw*100)+"%"
+            plt.title(title)
+            plt.plot(wav_binary,flux_binary,'black')
+            plt.plot(wav_sum,flux_sum,'r--')
+            plt.legend(['Observed','Synthetic'])
+            whattocallit=input("What would you like to call this plot? ")
+            plt.savefig(whattocallit)
+            print('Image has been saved as '+whattocallit+'.png\n')
+        keepgoing=input("Would you like to plot some more pairs? (Yes/No): ")
+else:
+    print("Overplotting from exel and Ascii files is unsupported at this time!")
 ####WRITING TO EXCEL
 if existingLocation=="None":
-    storeAnswer = input("Would you like to store your Combinations in an Ascii File or Excel File?(No,Ascii,Excel)")
+    storeAnswer = input('''
+-----------------------------------------------------------   
+Would you like to store your Combinations in an Ascii File or Excel File?(No,Ascii,Excel)''')
     if storeAnswer.lower()=="excel":
         if (numberofpairs>65500):
             print("The number of pairs is over 65500. Therefore you can not create an excel file")
         else:
-            print("Would you like to put your Combinations in an excel file?")
             makeAnExcelFile=''
             excelFilemade=''
             while not makeAnExcelFile:
@@ -322,7 +342,6 @@ if existingLocation=="None":
         lw = list(map(lambda x: x[0][2],pairs))
         rw = list(map(lambda x: x[0][3],pairs))
         std = list(map(lambda x: x[1],pairs))
-        print(std)
         whattocall = input("What would you like to call the Ascii file?")
         whattocall +=".asc"
         data = Table([l,r,lw,rw,std],names=["L_Temp","R_Temp","L_Weight","R_Weight","Standard Dev"])

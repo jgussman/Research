@@ -12,6 +12,7 @@ SOSA2
 6000K 
 
 
+
 -HIP94034
 -I'm staying the seperation of the two stars for HIP94034 is 3.591 angstroms
 -adding 0.35 to the observed wavelength so they ***mathch up***
@@ -19,3 +20,6 @@ SOSA2
 
 --IDEA:
 Make a file where the user changes all the parameters in a txt file. then they dont have to be continually prompted stuff
+
+--For the Read Me 
+-SOSA assumes there is a header in both the Ascii and Excel File
