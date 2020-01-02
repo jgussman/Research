@@ -1,7 +1,8 @@
 # Initial Setup
 1. Download repo and cd into the directory
-2. Install the contents of requirements.txt 
-        python3 -m pip install -r requirements.txt
+2. Install the contents of requirements.txt
+    - Run ```python3 -m pip install -r requirements.txt```
+        - This command may be slightly different based on your system
 
 
 # About SOSA2 
