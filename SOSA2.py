@@ -205,17 +205,15 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
                 flux_sum=(leftWeighted + rightWeighted)/2
                 wav_sum=(LeftSS[l][0]+RightSS[r][0])/2
                 indexINTOsum=np.where(np.isin(wav_sum,wav_binary))
-                indexINTObinary=np.where(np.isin(wav_binary,wav_sum))
+                indexINTObinary=np.where(np.isin(wav_binary,wav_sum)) 
                 combinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
     return combinations 
-
-
 
 print("DATA LOADED")
 if delta_weight==0:
     delta_weight=float(input('''
 -----------------------------------------------------------
-Enter the incredment for the weights:
+Enter the incredment for the weights (Most common is 0.1):
     '''))
     print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
     numberofpairs = float(len(LeftSS))*float(len(RightSS))*100./delta_weight
@@ -227,7 +225,6 @@ pairs=sorted(possibleCombinations.items(), key = lambda kv:(kv[1], kv[0])) #The 
 
 #3D plotting
 print("\n-----------------------------------------------------------\n")
-eachpairsbeststd=[]
 xpos=[]
 ypos=[]
 dz=[]
@@ -238,16 +235,11 @@ for l in LeftSS:
         for weight in np.arange(delta_weight,100.,delta_weight):
             weight = float(weight)
             weightschanging.append(possibleCombinations[(l,r,weight/100.,(100.-weight)/100.)])
-            #teffspair.append(str(l)+" "+str(r))
         minstd=min(weightschanging)
         index=weightschanging.index(minstd)
-        #split=teffspair[index].split(' ')
-        #eachpairsbeststd.append([teffspair[index],minstd])
         xpos.append(l)
         ypos.append(r)
         dz.append(minstd)
-
-eachpairsbeststd.sort()
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
