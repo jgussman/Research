@@ -17,7 +17,8 @@ Example:
     6380.981  0.9999874
     6380.982  0.9999871
     6380.983  0.9999866
-      ...        ... ```
+      ...        ...    
+```
 
 -Example of Synethic Spectra files in Folder:
 5000.txt 
