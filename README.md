@@ -29,7 +29,7 @@ Example:
 # About SOSA
 -Please only use SOSA2, for it is much faster and way more user friendly. 
 
-#Contact 
+# Contact 
 jgussman@iu.edu
 Title the email "SOSA QUESTION/CONCERN" 
 
