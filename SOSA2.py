@@ -243,8 +243,8 @@ for l in LeftSS:
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.plot_trisurf(xpos, ypos, dz, cmap=cm.jet, linewidth=0.9)
-plt.xlabel("Temperture(Kelvin)")
-plt.ylabel("Temperture(Kelvin)")
+plt.xlabel("Left Temp(Kelvin)")
+plt.ylabel("Right Temp(Kelvin)")
 plt.show()
 save3dplot=input("Would you like to save this plot? (Yes/No): ")
 if save3dplot.lower()=='yes':
