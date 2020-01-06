@@ -15,7 +15,14 @@ SOSA2
 
 -HIP94034
 -I'm staying the seperation of the two stars for HIP94034 is 3.591 angstroms
--adding 0.35 to the observed wavelength so they ***mathch up***
+-adding 0.35 to the observed wavelength so the observed matches the SS
+-(1/6/2020) The 3D plot shows that it is possible for there to a better pair a temp of 7000. 
+    -2 Things on this: 
+        -The 7000 pair for g+4.2_z+0.00_vt1 introduces new lines into the spectra that are not at all present in the observed. Also the lines become much much stronger in comparison to 
+         teff of 6900
+        -Even though the first best pair is l6500 and r6800 when the pairs are made in an incredments of 1 (instead of 0.1) the second best pair is l6400 r6900. 
+
+
 
 
 --IDEA:

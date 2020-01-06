@@ -220,7 +220,6 @@ Enter the incredment for the weights (Most common is 0.1):
     print("SOSA is currently making "+str(numberofpairs)+" Different Pairs!")
     possibleCombinations = MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight)
 
-
 pairs=sorted(possibleCombinations.items(), key = lambda kv:(kv[1], kv[0])) #The pair at the 0th index is the best matched to the observed spectra
 
 #3D plotting
