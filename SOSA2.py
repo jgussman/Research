@@ -196,16 +196,17 @@ def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
     Output: {(Left SS Temp,Right SS Temp, Left SS Weight, Right SS Weight : Standard deviation from the observed spectra}
     '''
     combinations={}
+    weightrange = np.arange(delta_weight,100,delta_weight)
     for l in LeftSS:
         for r in RightSS:
-            for weight in np.arange(delta_weight,100,delta_weight):
+            wav_sum=(LeftSS[l][0]+RightSS[r][0])/2
+            indexINTOsum=np.where(np.isin(wav_sum,wav_binary))
+            indexINTObinary=np.where(np.isin(wav_binary,wav_sum)) 
+            for weight in weightrange:
                 weight=float(weight)
                 leftWeighted=LeftSS[l][1]*weight/100.
                 rightWeighted=RightSS[r][1]*(100.-weight)/100.
                 flux_sum=(leftWeighted + rightWeighted)/2
-                wav_sum=(LeftSS[l][0]+RightSS[r][0])/2
-                indexINTOsum=np.where(np.isin(wav_sum,wav_binary))
-                indexINTObinary=np.where(np.isin(wav_binary,wav_sum)) 
                 combinations[((l,r,weight/100.,(100.-weight)/100))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
     return combinations 
 
