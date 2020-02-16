@@ -184,6 +184,9 @@ Your Answer: ''').split()))
     if binary_shift_question.lower() in ['y','yes']:
         binary_shift = float(input("Enter the number (In angstroms) of how much you would like to shift your binary"))
         wav_bi += binary_shift
+
+    
+
     return (LSS,RSS,wav_bi,flux_bi,possibleCombos,delta_weight)
         
 LeftSS,RightSS, wav_binary, flux_binary,possibleCombinations,delta_weight= LoadInData(ssLocation,existingLocation,binaryLocation)
