@@ -6,7 +6,8 @@ from PyAstronomy import pyasl
 
 ##Create data with a Gaussian absoprtion line
 
-wvl,flux = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\SS\\6700.txt",unpack= True)
+wvl1,flux1 = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\SS\\6700.txt",unpack= True)
+wvl2,flux2 = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\SS\\6800.txt",unpack= True)
 bwvl, bflux = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\Binaries\\HIP109303\\109303a16.txt",unpack = True)
 
 # # Apply the fast algorithm and ...
@@ -53,7 +54,7 @@ def LineBroadening(SSwav,SSflux,epsilon,vsini):
  
  
 
-wvl, bfast = LineBroadening(wvl,flux,0.2,100.)
+wvl, bfast = LineBroadening(wvl1,flux1,0.2,50.)
 
 
 
