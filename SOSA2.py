@@ -10,7 +10,6 @@ print('''                                 ******READ THIS******
 #Loading in Packages that are necessary for SOSA to run
 import numpy as np
 from os import listdir
-#%matplotlib notebook #THis is automatically enabled on Mac's 
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
@@ -20,6 +19,7 @@ from os import path
 import pandas as pd 
 from astropy.table import Table, Column, MaskedColumn
 from astropy.io import ascii
+from PyAstronomy import pyasl
 
 
 def FileLocations():
@@ -184,18 +184,56 @@ Your Answer: ''').split()))
     if binary_shift_question.lower() in ['y','yes']:
         binary_shift = float(input("Enter the number (In angstroms) of how much you would like to shift your binary"))
         wav_bi += binary_shift
-
-    
-
     return (LSS,RSS,wav_bi,flux_bi,possibleCombos,delta_weight)
         
 LeftSS,RightSS, wav_binary, flux_binary,possibleCombinations,delta_weight= LoadInData(ssLocation,existingLocation,binaryLocation)
 
+def CreateLineBroadening(LeftSS,RightSS,bWav,bFlux):
+    '''
+    Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binary : fluxes of binary}
+    Output: {(Temp of Left SS,epislon,vsini) : ['wavelength','flux']} , {(Temp of Right SS,epsilon,vsini) : ['wavelength','flux']} ALL LINEBROADEN
+    Using:  pyasl.fastRotBroad from the PyAstronomy package 
+    '''
+    plt.plot(bWav,bFlux,label="Binary")
+    plt.legend()
+    plt.title("Write down what the ranges you want to try for \n each star's vsini and epsilon")
+    plt.show()
 
+    leftStarVSINIrange = input("Please enter the range you want to look for the vsini of the LEFT star: \n ex: start,stop,step\n").split(",")
+    leftStarVSINIrange = [float(i) for i in leftStarVSINIrange]
+    leftStarEPSILONrange = input("Please enter the range you want to look for the epsilon of the LEFT star: \n ex: start,stop,step\n").split(",")
+    leftStarEPSILONrange = [float(i) for i in leftStarEPSILONrange]
+    rightStarVSINIrange = input("Please enter the range you want to look for the vsini of the RIGHT star: \n ex: start,stop,step\n").split(",")
+    rightStarVSINIrange = [float(i) for i in rightStarVSINIrange]
+    rightStarEPSILONrange = input("Please enter the range you want to look for the epsilon of the RIGHT star: \n ex: start,stop,step\n").split(",")
+    rightStarEPSILONrange = [float(i) for i in rightStarEPSILONrange]
+    print(''''
+            SOSA is now making all the different SS models based on the ranges given...
+                    This is could take a bit. Sit back, relax, and enjoy some Lofi''')
+    def lineBroaden(dic,epislonRange,vsiniRange):
+        returndic = {}
+        for temp in dic:
+            for epsilon in np.arange(epislonRange[0],epislonRange[1],epislonRange[2]):
+                for vsini in np.arange(vsiniRange[0],vsiniRange[1],vsiniRange[2]):
+                    wvl, flux = dic[temp][0], pyasl.fastRotBroad(dic[temp][0], dic[temp][1] , epsilon , vsini)
+                    PrecentOfLen = int(len(wvl)*0.025) #The fluxes at each end of the broadened wavelengths needs to be removed **THIS IS IMPORTANT**
+                    orgiLen = len(wvl)
+                    wvl = wvl[PrecentOfLen:len(wvl)-PrecentOfLen]
+                    flux = flux[PrecentOfLen:orgiLen-PrecentOfLen]
+                    returndic[(temp,epsilon,vsini)] = [wvl,flux]
+        return returndic
+    return lineBroaden(LeftSS,leftStarEPSILONrange,leftStarVSINIrange),lineBroaden(RightSS,rightStarEPSILONrange,rightStarVSINIrange)
+
+if LeftSS != "None":
+    broadenSpectraQuestion = input("Would you like to Line Broaden your spectrums?(y/n)")
+    if(broadenSpectraQuestion[0].lower()=='y'):
+        LeftSS,RightSS = CreateLineBroadening(LeftSS,RightSS,wav_binary,flux_binary)
+    else:
+        print("You have chosen to not Line Broaden\n"+"-"*25)
 #Make Combinations
 def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
     '''
-    Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binaries : fluxes of binaries} , incredment for the weight 
+    Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binary : fluxes of binary} , incredment for the weight 
     Output: {(Left SS Temp,Right SS Temp, Left SS Weight, Right SS Weight : Standard deviation from the observed spectra}
     '''
     combinations={}
@@ -217,7 +255,7 @@ print("DATA LOADED")
 if delta_weight==0:
     delta_weight=float(input('''
 -----------------------------------------------------------
-Enter the incredment for the weights (Most common is 0.1):
+Enter the incredment for the weights (Most common is 0.1%):
     '''))
     print("Making All Possible Pairs! Depending on how many possible combinations there are this could take awhile")    
     numberofpairs = float(len(LeftSS))*float(len(RightSS))*100./delta_weight
@@ -240,9 +278,14 @@ for l in LeftSS:
             weightschanging.append(possibleCombinations[(l,r,weight/100.,(100.-weight)/100.)])
         minstd=min(weightschanging)
         index=weightschanging.index(minstd)
-        xpos.append(l)
-        ypos.append(r)
-        dz.append(minstd)
+        if type(l)==int:
+            xpos.append(l)
+            ypos.append(r)
+            dz.append(minstd)
+        else:
+            xpos.append(l[0])
+            ypos.append(r[0])
+            dz.append(minstd)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')

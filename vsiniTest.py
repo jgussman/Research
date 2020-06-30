@@ -9,62 +9,84 @@ from PyAstronomy import pyasl
 wvl1,flux1 = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\SS\\6700.txt",unpack= True)
 wvl2,flux2 = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\SS\\6800.txt",unpack= True)
 bwvl, bflux = np.loadtxt("C:\\Users\\pirat\\Research\\SOSA\\Binaries\\HIP109303\\109303a16.txt",unpack = True)
+plt.plot(bwvl,bflux,label="Binary")
+plt.legend()
+plt.title("Write down what the ranges you want to try for \n each star's vsini and epsilon")
+plt.show()
+SS  = {6700:[wvl1,flux1]}
 
-# # Apply the fast algorithm and ...
-# bfast = pyasl.fastRotBroad(wvl, flux, 0.0, 50)
-
-
-
-def MakingCombinations(LeftSS,RightSS,wav_binary,flux_binary,delta_weight):
-    '''
-    Input: {(Left SS Temp,L Epsilon,L vsini) : [wavelength,flux]}, {(Right SS Temp,R Epsilon, R vsini) : [wavelength,flux]}, {wavelengths of binary : flux of binary}, incredment for the weight 
-    Output: {(Left SS Temp, L Weight, L Epsilon, L vsini, Right SS Temp, R Weight, R Epsilon, R vsini) : Standard deviation from the observed spectra}
-    '''
-    combinations={}
-    weightrange = np.arange(delta_weight,100,delta_weight)
-    for LeftStarDetails in LeftSS:
-        leftTemp = LeftStarDetails[0]
-        leftEpsilon = LeftStarDetails[1]
-        leftVsini = LeftStarDetails[2]
-        for RightStarDetails in RightSS:
-            rightTemp = RightStarDetails[0]
-            rightEpsilon = RightStarDetails[1]
-            rightVsini = RightStarDetails[2]
-            wav_sum=(LeftSS[leftTemp][0]+RightSS[rightTemp][0])/2
-            indexINTOsum=np.where(np.isin(wav_sum,wav_binary))
-            indexINTObinary=np.where(np.isin(wav_binary,wav_sum)) 
-            for weight in weightrange:
-                weight=float(weight)
-                leftWeighted=LeftSS[leftTemp][1]*weight/100.
-                rightWeighted=RightSS[rightTemp][1]*(100.-weight)/100.
-                flux_sum=(leftWeighted + rightWeighted)/2
-                combinations[((leftTemp,weight/100.,leftEpsilon,leftVsini,rightTemp,(100.-weight)/100.,rightEpsilon,rightVsini))]=(flux_sum[indexINTOsum]/flux_binary[indexINTObinary]).std()  
-    return combinations 
 
 #Where to put the vsini in SOSA: 1) Inside the possible combinations function
 #All the SS need to be broadened before the go into possible combinations 
 
-def LineBroadening(SSwav,SSflux,epsilon,vsini):
+def CreateLineBroadening(LeftSS,RightSS,bWav,bFlux):
     '''
-    Input: Synethic Spectra's wavelength (regularly spaced,numpy array), Synethic Spectra's flux (numpy array), epsilon(float), vsini(float)
-    Output: Inputed wavelength, Line Broadened flux (Both numpy array) 
+    Input: {Temp of Left SS : ['wavelength','flux']} , {Temp of Right SS : ['wavelength','flux']}, {wavelengths of binary : fluxes of binary}
+    Output: {(Temp of Left SS,epislon,vsini) : ['wavelength','flux']} , {(Temp of Right SS,epsilon,vsini) : ['wavelength','flux']} ALL LINEBROADEN
     Using:  pyasl.fastRotBroad from the PyAstronomy package 
     '''
-    return SSwav, pyasl.fastRotBroad(SSwav, SSflux , epsilon , vsini)
+    plt.plot(bWav,bFlux,label="Binary")
+    plt.legend()
+    plt.title("Write down what the ranges you want to try for \n each star's vsini and epsilon")
+    plt.show()
+
+    leftStarVSINIrange = input("Please enter the range you want to look for the vsini of the LEFT star: \n ex: start,stop,step\n").split(",")
+    leftStarVSINIrange = [float(i) for i in leftStarVSINIrange]
+    leftStarEPSILONrange = input("Please enter the range you want to look for the epsilon of the LEFT star: \n ex: start,stop,step\n").split(",")
+    leftStarEPSILONrange = [float(i) for i in leftStarEPSILONrange]
+    rightStarVSINIrange = input("Please enter the range you want to look for the vsini of the RIGHT star: \n ex: start,stop,step\n").split(",")
+    rightStarVSINIrange = [float(i) for i in rightStarVSINIrange]
+    rightStarEPSILONrange = input("Please enter the range you want to look for the epsilon of the RIGHT star: \n ex: start,stop,step\n").split(",")
+    rightStarEPSILONrange = [float(i) for i in rightStarEPSILONrange]
+    print(''''
+            SOSA is now making all the different SS models based on the ranges given...
+                    This is could take a bit. Sit back, relax, and enjoy some Lofi''')
+    def lineBroaden(dic,epislonRange,vsiniRange):
+        returndic = {}
+        for temp in dic:
+            for epsilon in np.arange(epislonRange[0],epislonRange[1],epislonRange[2]):
+                for vsini in np.arange(vsiniRange[0],vsiniRange[1],vsiniRange[2]):
+                    wvl, flux = dic[temp][0], pyasl.fastRotBroad(dic[temp][0], dic[temp][1] , epsilon , vsini)
+                    PrecentOfLen = int(len(wvl)*0.025) #The fluxes at each end of the broadened wavelengths needs to be removed **THIS IS IMPORTANT**
+                    orgiLen = len(wvl)
+                    wvl = wvl[PrecentOfLen:len(wvl)-PrecentOfLen]
+                    flux = flux[PrecentOfLen:orgiLen-PrecentOfLen]
+                    returndic[(temp,epsilon,vsini)] = [wvl,flux]
+        return returndic
+    return lineBroaden(LeftSS,leftStarEPSILONrange,leftStarVSINIrange),lineBroaden(RightSS,rightStarEPSILONrange,rightStarVSINIrange)
+            
+    
+    
+    
+
+
+    #return SSwav, pyasl.fastRotBroad(SSwav, SSflux , epsilon , vsini)
  
  
-
-wvl, bfast = LineBroadening(wvl1,flux1,0.2,50.)
-
-
-
-
-plt.xlabel("Wvl [A]")
-plt.ylabel("Flux [au]")
-plt.title("Initial spectrum (black), fast (blue), slow (red, shifted)")
-plt.plot(bwvl, bflux, 'k.-')
-plt.plot(wvl, bfast, 'b.-')
+lineBroadSS,rLineBroadSS = CreateLineBroadening({6700:[wvl1,flux1]},{6800:[wvl2,flux2]},bwvl,bflux)
+plt.plot(lineBroadSS[(6700,0.2,50.0)][0],lineBroadSS[(6700,0.2,50.0)][1])
 plt.show()
+
+
+
+#Goals: 
+# Try to find a way to cut down of brute forcing the vsini and epislons as much as possible
+# Get the PossibleCombinations to run all cores if I want 
+
+#How about before I get he model up and running I get the vsini Stuff done and intorgrated into the model. Because I know that is pivital.
+
+
+
+# wvl, bfast = LineBroadening(wvl1,flux1,0.2,50.)
+
+
+
+# plt.xlabel("Wvl [A]")
+# plt.ylabel("Flux [au]")
+# plt.title("Initial spectrum (black), fast (blue), slow (red, shifted)")
+# plt.plot(bwvl, bflux, 'k.-')
+# plt.plot(wvl-2, bfast, 'b.-')
+# plt.show()
 
 
 
